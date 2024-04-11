@@ -32,10 +32,10 @@ def generate_random_datetimes(length, min_date, max_date):
     return [min_datetime + timedelta(seconds=random.randint(0, int(delta.total_seconds()))) for _ in range(length)]
 
 
-def generate_example_tweets(num_rows):
+def gen_example_tweets(num_rows, min_date, max_date):
 
     data_dict = dict()
     data_dict["text"] = gen_tweets(num_rows, 3, 7)
-    data_dict["datetime"] = generate_random_datetimes(num_rows, "2023-01-01 00:00:00", "2023-12-31 23:59:59")
+    data_dict["datetime"] = generate_random_datetimes(length=num_rows, min_date=min_date, max_date=max_date)
 
     return pd.DataFrame(data=data_dict)
