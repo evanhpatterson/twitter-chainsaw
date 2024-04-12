@@ -5,8 +5,10 @@ from wordprop.encode_words import one_hot_encode_words
 from wordprop.word_indexer import generate_word_dicts
 
 
-def encode_data(tweet_data, stock_data):
+def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
 
+    # create a dict out of the stock data,
+    # makes accessing it easier
     stock_data_dict = dict()
     for i, row in stock_data.iterrows():
         stock_data_dict[row["date"]] = row["stock_price"]
@@ -39,6 +41,7 @@ def encode_data(tweet_data, stock_data):
         if tlen > max_tweet_length:
             max_tweet_length = tlen
     
+    # inputs and outputs
     data_x_pre = []
     data_y = []
 
@@ -62,31 +65,42 @@ def encode_data(tweet_data, stock_data):
             # get the list of all tweets on that day
             tweet_list = tweets_on_day["text"].to_list()
             
-            # create a list of encoded tweets
+            # create a list of encoded tweets for this day
             encoded_tweets = []
             for tweet in tweet_list:
+
+                # one hot encode this list of words
                 encoded_tweet = one_hot_encode_words(
                     text_str=tweet,
                     input_word_index=input_word_index,
                     max_size=max_tweet_length)
                 encoded_tweets.append(encoded_tweet)
+            
+            # convert to numpy array
             encoded_tweets = np.array(encoded_tweets, dtype=np.float32)
+
+            # append to list
             data_x_pre.append(encoded_tweets)
             data_y.append(price)
     
+    # find the highest number of tweets in a day
     max_num_tweets = 0
     for tweet_list in data_x_pre:
         num_tweets = len(tweet_list)
         if num_tweets > max_num_tweets:
             max_num_tweets = num_tweets
     
-    data_x_ = np.zeros(shape=(len(data_x_pre), max_num_tweets, max_tweet_length, len(input_word_index)), dtype=np.float32)
+    # initialize input data
+    data_x = np.zeros(shape=(len(data_x_pre), max_num_tweets, max_tweet_length, len(input_word_index)), dtype=np.float32)
 
+    # set input data using encoded tweets
     for i, x in enumerate(data_x_pre):
-        data_x_[i, :len(x)] = x
-
+        data_x[i, :len(x)] = x
+    
+    # set output data
     data_y = np.array(data_y, dtype=np.float32)
 
-    return data_x_, data_y
+    # return inputs and outputs
+    return data_x, data_y
 
 

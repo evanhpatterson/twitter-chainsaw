@@ -1,4 +1,5 @@
-from wordprop.word_indexer import generate_word_dicts
 
 def load_internal_lexicon():
-    return list(set(open('wordprop/internal_lexicon.txt', 'r').read().split(sep='\n')))
+    contents = open('wordprop/internal_lexicon.txt', 'r').read().replace('(', ' ').replace(')', ' ').lower()
+    split_text = list(set(contents.split()))
+    return [word for word in split_text if not (len(word) == 1)]

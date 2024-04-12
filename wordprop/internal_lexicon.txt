@@ -1,45 +1,58 @@
-inflation
-gdp
-unemployment
-rate
-interest
-rates
-consumer
-confidence
-retail
-sales
-manufacturing
-housing
-bull
-bear
-market
-volatility
-correction
-sentiment
-analysis
-fear
-index
-trend
-following
-eps
-pe
-ratio
-dividend
-yield
-roe
-profit
-margin
-revenue
-growth
-debt
-equity
-moving
-rsi
-macd
-bollinger
-bands
-support
-resistance
-breakout
-fibonacci
-retracement
+Economic Indicators
+Inflation
+GDP (Gross Domestic Product)
+Unemployment Rate
+Interest Rates
+Consumer Confidence
+Retail Sales
+Manufacturing PMI (Purchasing Managers' Index)
+Housing Starts
+Market Sentiment
+Bull Market
+Bear Market
+Volatility
+Market Correction
+Sentiment Analysis
+Fear Index (VIX)
+Trend Following
+Financial Performance & Ratios
+EPS (Earnings Per Share)
+P/E Ratio (Price to Earnings)
+Dividend Yield
+ROE (Return on Equity)
+Profit Margin
+Revenue Growth
+Debt to Equity Ratio
+Technical Analysis
+Moving Average
+RSI (Relative Strength Index)
+MACD (Moving Average Convergence Divergence)
+Bollinger Bands
+Support and Resistance
+Breakout
+Fibonacci Retracement
+Company News & Events
+Earnings Report
+Mergers and Acquisitions
+Product Launch
+Regulatory Approval
+Patent Approval
+Executive Changes
+Scandal / Legal Issues
+Broader Market News
+Fiscal Policy
+Monetary Policy
+Trade Agreements
+Sanctions
+Geopolitical Events
+Supply Chain Disruptions
+Trading Activity
+Trading Volume
+Short Interest
+Insider Trading
+Institutional Ownership
+Miscellaneous
+ETFs (Exchange-Traded Funds)
+Index Fund
+Commodities
+Cryptocurrencies (as a sentiment indicator for risk)
