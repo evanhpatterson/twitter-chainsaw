@@ -1,28 +1,30 @@
 from keras.models import Model
-from keras.layers import Input, LSTM, Conv1D, TimeDistributed
+from keras.layers import Input, LSTM, Conv1D, TimeDistributed, Embedding
 
 
 def set_word_matrix(model, word_mat):
     weights = model.get_weights()
 
-    weights[0][0, :word_mat.shape[0], :word_mat.shape[1]] = word_mat
+    weights[0][:word_mat.shape[0], :word_mat.shape[1]] = word_mat
 
     model.set_weights(weights)
 
 def create_word_model(word_mat, num_unique_words, internal_lexicon_size, lstm1_size, lstm2_size, extra_words=0):
     
-    input_layer = Input(shape=(None, None, num_unique_words))
+    input_layer = Input(shape=(None, None,))
 
     # this is what it will look like when we change this to an embedding layer
-    #embedding_layer = TimeDistributed(Embedding(input_dim=num_unique_words, output_dim=internal_lexicon_size+extra_words))(input_layer)
+    embedding_layer = TimeDistributed(Embedding(input_dim=num_unique_words, output_dim=internal_lexicon_size+extra_words))(input_layer)
 
+    '''
     conv1d = TimeDistributed(
         Conv1D(
             filters=internal_lexicon_size+extra_words,
             kernel_size=1,
             activation='tanh'))(input_layer)
+    '''
     
-    lstm1 = TimeDistributed(LSTM(lstm1_size))(conv1d)
+    lstm1 = TimeDistributed(LSTM(lstm1_size))(embedding_layer)
 
     lstm2 = LSTM(lstm2_size)(lstm1)
 

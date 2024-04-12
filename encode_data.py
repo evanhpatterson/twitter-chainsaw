@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from wordprop.encode_words import one_hot_encode_words
+from wordprop.encode_words import convert_to_ints
 from wordprop.word_indexer import generate_word_dicts
 
 
@@ -69,15 +69,16 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
             encoded_tweets = []
             for tweet in tweet_list:
 
-                # one hot encode this list of words
-                encoded_tweet = one_hot_encode_words(
+                # encode this list of words
+                encoded_tweet = convert_to_ints(
                     text_str=tweet,
                     input_word_index=input_word_index,
                     max_size=max_tweet_length)
+                
                 encoded_tweets.append(encoded_tweet)
             
             # convert to numpy array
-            encoded_tweets = np.array(encoded_tweets, dtype=np.float32)
+            encoded_tweets = np.array(encoded_tweets)
 
             # append to list
             data_x_pre.append(encoded_tweets)
@@ -91,7 +92,7 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
             max_num_tweets = num_tweets
     
     # initialize input data
-    data_x = np.zeros(shape=(len(data_x_pre), max_num_tweets, max_tweet_length, len(input_word_index)), dtype=np.float32)
+    data_x = np.zeros(shape=(len(data_x_pre), max_num_tweets, max_tweet_length), dtype=int)
 
     # set input data using encoded tweets
     for i, x in enumerate(data_x_pre):
