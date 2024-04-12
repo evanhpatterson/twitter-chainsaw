@@ -3,18 +3,24 @@ from gen_example_tweets import gen_example_tweets
 from gen_example_stock_data import gen_stock_data
 from wordprop.word_indexer import generate_word_dicts
 from wordprop.internal_lexicon import load_internal_lexicon
-from wordprop.encode_words import one_hot_encode_words
 from wordprop.synsets_similarity import word_similarity_synsets
 from wordprop.glove_similarity import word_similarity_glove_cos, word_similarity_glove_euc
+from encode_data import encode_data
 from wordprop.create_word_matrix import create_word_matrix
+from wordprop.create_word_model import create_word_model
+from wordprop.create_stocks_model import create_stocks_model
+from keras.models import Sequential
 
 
 if __name__=="__main__":
+    start_date = "2019-01-01"
+    end_date = "2019-06-01"
+
     # generate toy stock data
-    stock_data = gen_stock_data("2019-01-01", "2019-06-01")
+    stock_data = gen_stock_data(start_date=start_date, end_date=end_date)
 
     # generate toy tweets
-    tweet_data = gen_example_tweets(100, "2019-01-01 00:00:00", "2019-06-01 23:59:59")
+    tweet_data = gen_example_tweets(10000, "2019-01-01 00:00:00", "2019-06-01 23:59:59")
 
     # concatenate tweets
     words_set = set((' '.join(tweet_data["text"])).split(sep=' '))
@@ -27,35 +33,28 @@ if __name__=="__main__":
     internal_lexicon = load_internal_lexicon()
     output_word_index, output_index_word = generate_word_dicts(internal_lexicon)
 
-    # encode to model inputs
-    model_inputs = [
-        one_hot_encode_words(
-            words_list=tweet.split(sep=' '),
-            input_word_index=input_word_index,
-            max_size=128
-            ) for tweet in tweet_data["text"]]
+    data_x, data_y = encode_data(tweet_data=tweet_data, stock_data=stock_data)
+
+    word_mat = create_word_matrix(
+        input_words=unique_words,
+        input_words_dict=input_word_index,
+        output_words=internal_lexicon,
+        output_words_dict=output_word_index,
+        similarity_func=word_similarity_glove_cos)
+
+    word_model = create_word_model(
+        word_mat=word_mat.T,
+        num_unique_words=len(unique_words),
+        internal_lexicon_size=len(internal_lexicon),
+        lstm1_size=128,
+        lstm2_size=64,
+        extra_words=0)
     
-    model_inputs = np.array(model_inputs, dtype=np.float32)
+    stocks_model = create_stocks_model()
 
-    # generate the matrix representing similarities
-    mat1 = create_word_matrix(
-        unique_words, input_word_index,
-        internal_lexicon, output_word_index,
-        word_similarity_func=word_similarity_synsets)
+    model = Sequential()
+    model.add(word_model)
+    model.add(stocks_model)
 
-
-    # generate the matrix representing similarities
-    mat2 = create_word_matrix(
-        unique_words, input_word_index,
-        internal_lexicon, output_word_index,
-        word_similarity_func=word_similarity_glove_cos)
-
-
-    # generate the matrix representing similarities
-    mat3 = create_word_matrix(
-        unique_words, input_word_index,
-        internal_lexicon, output_word_index,
-        word_similarity_func=word_similarity_glove_euc)
-    
-    mat3 -= np.mean(mat3)
-    mat3 /= np.std(mat3)
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.summary()

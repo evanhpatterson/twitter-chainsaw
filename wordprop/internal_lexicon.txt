@@ -8,7 +8,7 @@ consumer
 confidence
 retail
 sales
-hanufacturing
+manufacturing
 housing
 bull
 bear

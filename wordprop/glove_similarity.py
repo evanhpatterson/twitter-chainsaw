@@ -38,10 +38,13 @@ def word_similarity_glove(word1, word2):
     vec1 = np.array(glove_model.get(word1))
     vec2 = np.array(glove_model.get(word2))
 
-    cos_similarity = cosine_similarity(vec1, vec2)
-    euc_similarity = np.linalg.norm(vec1 - vec2)
-    euc_similarity = np.ones_like(euc_similarity) - euc_similarity
-    return cos_similarity, euc_similarity
+    if (vec1.dtype == np.float64) and (vec2.dtype == np.float64) and (vec1.shape == vec2.shape):
+        cos_similarity = cosine_similarity(vec1, vec2)
+        euc_similarity = np.linalg.norm(vec1 - vec2)
+        euc_similarity = np.ones_like(euc_similarity) - euc_similarity
+        return cos_similarity, euc_similarity
+    else:
+        return 0.0, float('-inf')
 
 def word_similarity_glove_cos(word1, word2):
     cos_similarity, _ = word_similarity_glove(word1, word2)

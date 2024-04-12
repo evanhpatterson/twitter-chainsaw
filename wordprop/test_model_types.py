@@ -1,9 +1,9 @@
 import numpy as np
 from create_word_matrix import create_word_matrix
 from word_indexer import generate_word_dicts
-from create_nnet import create_model_from_word_matrix, create_word_to_stocks_model
+from wordprop.create_word_model import create_word_model
+from wordprop.create_stocks_model import create_word_to_stocks_model
 from keras.models import Sequential
-from keras.layers import Dense, Flatten
 
 
 def evaluate_similarity_function(input_words, output_words, similarity_func, training_data, validation_data):
@@ -23,7 +23,11 @@ def evaluate_similarity_function(input_words, output_words, similarity_func, tra
         similarity_func=similarity_func)
     
     # create a neural net, initialize first layer with mat
-    word_model = create_model_from_word_matrix(mat=mat, input_words=input_words, output_words=output_words)
+    word_model = create_word_model(
+        num_unique_words=len(input_words),
+        internal_lexicon_size=len(output_words),
+        lstm1_size=64,
+        lstm2_size=64)
 
     # make model for predicting stocks using words
     stocks_model = create_word_to_stocks_model()
