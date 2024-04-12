@@ -2,7 +2,7 @@ import pandas as pd
 import random
 from datetime import datetime, timedelta
 
-words_list = open('words_list.txt', 'r').read().split(sep='\n')
+words_list = open('toy_data_generation/words_list.txt', 'r').read().split(sep='\n')
 
 
 def write_sentence(n):
