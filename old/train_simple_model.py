@@ -1,7 +1,7 @@
 import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Embedding
-from load_imdb_sequences import *
+from old.load_imdb_sequences import *
 
 
 # Build the model

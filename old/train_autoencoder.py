@@ -1,7 +1,7 @@
 import pandas as pd
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from autoencoder import create_autoencoder
+from old.autoencoder import create_autoencoder
 import numpy as np
 import random
 
