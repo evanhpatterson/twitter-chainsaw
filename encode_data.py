@@ -1,43 +1,61 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from wordprop.encode_words import convert_to_ints
 from wordprop.word_indexer import generate_word_dicts
 
+def keep_overlapping_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
+    '''
+        Take both dataframes, remove any rows that are not overlapping.
+    '''
 
-def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
+    # extract min date
+    min_datetime_stocks = datetime.combine(min(stock_data['Date']), datetime.min.time())
+
+    # extract max date
+    max_datetime_stocks = datetime.combine(max(stock_data['Date']), datetime.min.time())
+
+    # extract min and max tweet dates
+    min_datetime_tweets = min(tweet_data['datetime']).to_pydatetime()
+    max_datetime_tweets = max(tweet_data['datetime']).to_pydatetime()
+
+    # use the latest minimum and the earliest maximum
+    min_datetime = max(min_datetime_tweets, min_datetime_stocks)
+    max_datetime = min(max_datetime_tweets, max_datetime_stocks)
+
+    # remove tweet data outside of the dates of interest
+    filtered_tweet_data = tweet_data[
+        (tweet_data['datetime'] >= min_datetime) &
+        (tweet_data['datetime'] <= max_datetime)]
+    
+    # remove stock data outside of the dates of interest
+    filtered_stock_data = stock_data[
+        (stock_data['Date'] >= min_datetime.date()) &
+        (stock_data['Date'] <= max_datetime.date())]
+    
+    return filtered_tweet_data, filtered_stock_data
+    
+
+def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame, input_word_index: dict, time_window: int=0):
+    '''
+        Encode the tweet data as data_x, and the stock data as data_y
+    '''
+
+    # make sure there are tweets for every stock and stocks for every tweet
+    tweet_data, stock_data = keep_overlapping_data(tweet_data=tweet_data, stock_data=stock_data)
 
     # create a dict out of the stock data,
     # makes accessing it easier
     stock_data_dict = dict()
     for i, row in stock_data.iterrows():
-        stock_data_dict[row["date"]] = row["stock_price"]
+        row_vals = row.drop("Date")
+        stock_data_dict[row["Date"]] = row_vals
 
-    # concatenate tweets
-    words_set = set((' '.join(tweet_data["text"])).split(sep=' '))
-    unique_words = list(words_set)
-
-    # get input word indices
-    input_word_index, _ = generate_word_dicts(unique_words)
-
-    # extract min date
-    min_date = min(stock_data['date'])
-    min_datetime = datetime.combine(min_date, datetime.min.time())
-
-    # extract max date
-    max_date = max(stock_data['date'])
-    max_datetime = datetime.combine(max_date, datetime.min.time())
-
-    # pre-filter it for efficiency
-    filtered_tweet_data = tweet_data[
-        (tweet_data['datetime'] >= min_datetime) &
-        (tweet_data['datetime'] <= max_datetime)]
-    
     # find the longest tweet, set max length
     max_tweet_length = 0
-    for i, row in filtered_tweet_data.iterrows():
+    for i, row in tweet_data.iterrows():
         tweet = row['text']
-        tlen = len(tweet.split(sep=' '))
+        tlen = len(tweet.split())
         if tlen > max_tweet_length:
             max_tweet_length = tlen
     
@@ -45,27 +63,31 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
     data_x_pre = []
     data_y = []
 
+    min_date_stocks = min(stock_data['Date']) + timedelta(days=time_window)
+
+    stock_data = stock_data[stock_data['Date'] >= min_date_stocks]
+
     # iterate through dates
     for date, price in stock_data_dict.items():
 
-        # beginning of day
-        min_on_day = datetime.combine(date, datetime.min.time())
+        # beginning of first day
+        min_day_one = datetime.combine(date, datetime.min.time()) - timedelta(days=time_window)
 
-        # end of day
-        max_on_day = datetime.combine(date, datetime.max.time())
+        # end of last day
+        max_last_day = datetime.combine(date, datetime.max.time()) - timedelta(days=1)
 
-        # all tweets on this day
-        tweets_on_day = filtered_tweet_data[
-            (filtered_tweet_data['datetime'] >= min_on_day) &
-            (filtered_tweet_data['datetime'] <= max_on_day)]
+        # all tweets in this time window
+        input_tweets = tweet_data[
+            (tweet_data['datetime'] >= min_day_one) &
+            (tweet_data['datetime'] <= max_last_day)]
         
-        # if there are actually tweets on that day
-        if len(tweets_on_day) > 0:
+        # if there are actually tweets in this time window
+        if len(input_tweets) > 0:
 
-            # get the list of all tweets on that day
-            tweet_list = tweets_on_day["text"].to_list()
+            # get the list of all tweets in this window
+            tweet_list = input_tweets["text"].to_list()
             
-            # create a list of encoded tweets for this day
+            # create a list of encoded tweets for this window
             encoded_tweets = []
             for tweet in tweet_list:
 
@@ -78,7 +100,7 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
                 encoded_tweets.append(encoded_tweet)
             
             # convert to numpy array
-            encoded_tweets = np.array(encoded_tweets)
+            encoded_tweets = np.array(encoded_tweets, dtype=int)
 
             # append to list
             data_x_pre.append(encoded_tweets)
@@ -103,5 +125,3 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
 
     # return inputs and outputs
     return data_x, data_y
-
-

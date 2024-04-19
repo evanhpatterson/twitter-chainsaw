@@ -12,8 +12,13 @@ def generate_date_range(start_date, end_date):
 def gen_stock_data(start_date, end_date):
     data_dict = dict()
     dates = generate_date_range(start_date=start_date, end_date=end_date)
-    data_dict["date"] = dates
+    data_dict["Date"] = dates
     num_rows = len(dates)
-    data_dict["stock_price"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["Open"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["High"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["Low"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["Close"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["Adj Close"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["Volume"] = np.random.randint(10, 100, size=num_rows)
 
     return pd.DataFrame(data=data_dict)

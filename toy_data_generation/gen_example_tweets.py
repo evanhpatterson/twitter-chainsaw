@@ -16,7 +16,6 @@ def write_sentence(n):
 
 
 def gen_tweets(num_tweets, min_length, max_length):
-
     tweets_list = []
     for _ in range(num_tweets):
         tweets_list.append(write_sentence(random.randint(min_length, max_length)))
