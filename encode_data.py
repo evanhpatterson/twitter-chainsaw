@@ -36,7 +36,13 @@ def keep_overlapping_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
     return filtered_tweet_data, filtered_stock_data
     
 
-def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame, input_word_index: dict, time_window: int=0):
+def encode_data(
+        tweet_data: pd.DataFrame,
+        stock_data: pd.DataFrame,
+        input_word_index: dict,
+        time_window: int=0,
+        max_tweets: int=512,
+        max_tweet_length: int=64):
     '''
         Encode the tweet data as data_x, and the stock data as data_y
     '''
@@ -50,14 +56,6 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame, input_word_i
     for i, row in stock_data.iterrows():
         row_vals = row.drop("Date")
         stock_data_dict[row["Date"]] = row_vals
-
-    # find the longest tweet, set max length
-    max_tweet_length = 0
-    for i, row in tweet_data.iterrows():
-        tweet = row['text']
-        tlen = len(tweet.split())
-        if tlen > max_tweet_length:
-            max_tweet_length = tlen
     
     # inputs and outputs
     data_x_pre = []
@@ -106,15 +104,8 @@ def encode_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame, input_word_i
             data_x_pre.append(encoded_tweets)
             data_y.append(price)
     
-    # find the highest number of tweets in a day
-    max_num_tweets = 0
-    for tweet_list in data_x_pre:
-        num_tweets = len(tweet_list)
-        if num_tweets > max_num_tweets:
-            max_num_tweets = num_tweets
-    
     # initialize input data
-    data_x = np.zeros(shape=(len(data_x_pre), max_num_tweets, max_tweet_length), dtype=int)
+    data_x = np.zeros(shape=(len(data_x_pre), max_tweets, max_tweet_length), dtype=int)
 
     # set input data using encoded tweets
     for i, x in enumerate(data_x_pre):
