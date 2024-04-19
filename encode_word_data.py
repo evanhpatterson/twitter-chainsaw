@@ -36,7 +36,7 @@ def keep_overlapping_data(tweet_data: pd.DataFrame, stock_data: pd.DataFrame):
     return filtered_tweet_data, filtered_stock_data
     
 
-def encode_data(
+def encode_word_data(
         tweet_data: pd.DataFrame,
         stock_data: pd.DataFrame,
         input_word_index: dict,
@@ -61,48 +61,53 @@ def encode_data(
     data_x_pre = []
     data_y = []
 
-    min_date_stocks = min(stock_data['Date']) + timedelta(days=time_window)
+    min_date_stocks = min(stock_data['Date']) + timedelta(days=(time_window-1))
 
     stock_data = stock_data[stock_data['Date'] >= min_date_stocks]
 
+    prev_features = None
+
     # iterate through dates
-    for date, price in stock_data_dict.items():
-
-        # beginning of first day
-        min_day_one = datetime.combine(date, datetime.min.time()) - timedelta(days=time_window)
-
-        # end of last day
-        max_last_day = datetime.combine(date, datetime.max.time()) - timedelta(days=1)
-
-        # all tweets in this time window
-        input_tweets = tweet_data[
-            (tweet_data['datetime'] >= min_day_one) &
-            (tweet_data['datetime'] <= max_last_day)]
+    for date, features in stock_data_dict.items():
         
-        # if there are actually tweets in this time window
-        if len(input_tweets) > 0:
+        if prev_features is not None:
+            # beginning of first day
+            min_day_one = datetime.combine(date, datetime.min.time()) - timedelta(days=time_window)
 
-            # get the list of all tweets in this window
-            tweet_list = input_tweets["text"].to_list()
+            # end of last day
+            max_last_day = datetime.combine(date, datetime.max.time()) - timedelta(days=1)
+
+            # all tweets in this time window
+            input_tweets = tweet_data[
+                (tweet_data['datetime'] >= min_day_one) &
+                (tweet_data['datetime'] <= max_last_day)]
             
-            # create a list of encoded tweets for this window
-            encoded_tweets = []
-            for tweet in tweet_list:
+            # if there are actually tweets in this time window
+            if len(input_tweets) > 0:
 
-                # encode this list of words
-                encoded_tweet = convert_to_ints(
-                    text_str=tweet,
-                    input_word_index=input_word_index,
-                    max_size=max_tweet_length)
+                # get the list of all tweets in this window
+                tweet_list = input_tweets["text"].to_list()
                 
-                encoded_tweets.append(encoded_tweet)
-            
-            # convert to numpy array
-            encoded_tweets = np.array(encoded_tweets, dtype=int)
+                # create a list of encoded tweets for this window
+                encoded_tweets = []
+                for tweet in tweet_list:
 
-            # append to list
-            data_x_pre.append(encoded_tweets)
-            data_y.append(price)
+                    # encode this list of words
+                    encoded_tweet = convert_to_ints(
+                        text_str=tweet,
+                        input_word_index=input_word_index,
+                        max_size=max_tweet_length)
+                    
+                    encoded_tweets.append(encoded_tweet)
+                
+                # convert to numpy array
+                encoded_tweets = np.array(encoded_tweets, dtype=int)
+
+                # append to list
+                data_x_pre.append(encoded_tweets)
+                data_y.append(features - prev_features)
+            
+        prev_features = features
     
     # initialize input data
     data_x = np.zeros(shape=(len(data_x_pre), max_tweets, max_tweet_length), dtype=int)
@@ -113,6 +118,7 @@ def encode_data(
     
     # set output data
     data_y = np.array(data_y, dtype=np.float32)
+    data_y /= np.std(data_y, axis=0)
 
     # return inputs and outputs
     return data_x, data_y

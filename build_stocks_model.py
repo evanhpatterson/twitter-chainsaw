@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Dropout, LeakyReLU
+from keras.layers import Dense, LSTM
 
 def build_model(n_prev_days, n_features, loss='mean_absolute_error'):
     model = Sequential([

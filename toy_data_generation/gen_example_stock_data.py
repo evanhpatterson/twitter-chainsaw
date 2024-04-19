@@ -19,6 +19,6 @@ def gen_stock_data(start_date, end_date):
     data_dict["Low"] = np.random.randint(10, 100, size=num_rows)
     data_dict["Close"] = np.random.randint(10, 100, size=num_rows)
     data_dict["Adj Close"] = np.random.randint(10, 100, size=num_rows)
-    data_dict["Volume"] = np.random.randint(10, 100, size=num_rows)
+    data_dict["Volume"] = np.random.randint(1_000, 10_000, size=num_rows)
 
     return pd.DataFrame(data=data_dict)

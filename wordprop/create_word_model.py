@@ -13,16 +13,7 @@ def create_word_model(word_mat, num_unique_words, internal_lexicon_size, lstm1_s
     
     input_layer = Input(shape=(None, None,))
 
-    # this is what it will look like when we change this to an embedding layer
     embedding_layer = TimeDistributed(Embedding(input_dim=num_unique_words, output_dim=internal_lexicon_size+extra_words))(input_layer)
-
-    '''
-    conv1d = TimeDistributed(
-        Conv1D(
-            filters=internal_lexicon_size+extra_words,
-            kernel_size=1,
-            activation='tanh'))(input_layer)
-    '''
     
     lstm1 = TimeDistributed(LSTM(lstm1_size))(embedding_layer)
 
