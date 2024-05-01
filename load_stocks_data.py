@@ -13,7 +13,7 @@ def load_stocks_forecasting_data(fpath: str, n_prev_days: int):
 
     # get the deltas from day to day
     df = df.set_index("Date").diff()
-    df = df.drop(df.index[0])
+    df = df.dropna()
 
     # preprocess by normalizing the values
     scaler = StandardScaler()

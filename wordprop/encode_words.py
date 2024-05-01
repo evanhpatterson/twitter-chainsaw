@@ -18,8 +18,9 @@ def convert_to_ints(text_str: str, input_word_index, max_size):
     '''
     encoded = np.zeros(max_size, dtype=int)
     words_list = text_str.split()
+    filtered_words_list = [word for word in words_list if isinstance(word, str)]
 
-    for i, word in enumerate(words_list):
+    for i, word in enumerate(filtered_words_list):
         if word in input_word_index:
             encoded[i] = input_word_index[word]
 
