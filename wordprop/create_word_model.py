@@ -9,6 +9,7 @@ def set_word_matrix(model, word_mat):
 
     model.set_weights(weights)
 
+
 def create_word_model(word_mat, num_unique_words, internal_lexicon_size, lstm1_size, lstm2_size, extra_words=0):
     
     input_layer = Input(shape=(None, None,))
@@ -22,8 +23,9 @@ def create_word_model(word_mat, num_unique_words, internal_lexicon_size, lstm1_s
     model = Model(inputs=input_layer, outputs=lstm2)
 
     model.compile(optimizer='adam', loss='mean_squared_error')
-
-    set_word_matrix(model=model, word_mat=word_mat)
+    
+    if word_mat is not None:
+        set_word_matrix(model=model, word_mat=word_mat)
 
     return model
 

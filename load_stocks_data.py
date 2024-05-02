@@ -18,6 +18,8 @@ def load_stocks_forecasting_data(fpath: str, n_prev_days: int):
     # preprocess by normalizing the values
     scaler = StandardScaler()
     data = scaler.fit_transform(df)
+    
+    print(type(data))
 
     # start collecting data
     data_x = []

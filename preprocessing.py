@@ -68,7 +68,7 @@ def load_dataframes(tweet_fpath: str, stock_fpath: str, tweet_datetime_col: str,
     stock_data = pd.read_csv(stock_fpath, parse_dates=[date_col])
 
     stock_data[date_col] = stock_data[date_col].dt.date
-
+    
     return tweet_data, stock_data
 
 
@@ -113,11 +113,25 @@ def encode_tweet_list(tweet_list: list, input_word_index: dict, max_tweets: int,
     return encoded_tweets
 
 
+def encode_tweet(tweet, input_word_index: dict, max_words: int):
+    words_list = tweet.split()
+    filtered_words_list = [word for word in words_list if isinstance(word, str)]
+    
+    if len(filtered_words_list) > max_words:
+        filtered_words_list = filtered_words_list[:max_words]
+    
+    encoded_words = np.zeros(max_words, dtype=int)
+    
+    for i, word in enumerate(filtered_words_list):
+        encoded_words[i] = input_word_index[word]
+    
+    return encoded_words
+
+
 def encode_data(
         tweet_dict: dict,
         stock_dict: dict,
         input_word_index: dict,
-        max_tweets: int,
         max_words: int,
         time_window: int):
 
@@ -150,7 +164,7 @@ def encode_data(
         if len(tweets) > 0:
 
             # encode tweets as ints
-            encoded_tweets = encode_tweet_list(tweets, input_word_index, max_tweets, max_words)
+            encoded_tweets = [encode_tweet(tweet, input_word_index=input_word_index, max_words=max_words) for tweet in tweets]
 
             # encode stocks as a numpy array for that day
             encoded_stocks = stock_dict[cur_date]
@@ -159,10 +173,8 @@ def encode_data(
             data_x.append(encoded_tweets)
             data_y.append(encoded_stocks)
     
-    # convert to numpy arrays
-    data_x = np.array(data_x, dtype=int)
     data_y = np.array(data_y, dtype=np.float32)
-
+    
     return data_x, data_y
 
 
@@ -193,7 +205,6 @@ def preprocess_data(tweet_fpath: str, stock_fpath: str):
         tweet_dict=tweet_dict,
         stock_dict=stock_dict,
         input_word_index=input_word_index,
-        max_tweets=10_000,
         max_words=64,
         time_window=3)
     
@@ -207,7 +218,3 @@ if __name__=="__main__":
     stock_fpath = "data/NVDA-delta.csv"
 
     data_x, data_y, input_word_index, unique_words = preprocess_data(tweet_fpath=tweet_fpath, stock_fpath=stock_fpath)
-
-    print(data_x.shape)
-    print(data_y.shape)
-
