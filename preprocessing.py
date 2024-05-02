@@ -57,13 +57,17 @@ def convert_df_datetime_to_date(data: pd.DataFrame, datetime_col: str, text_col:
     return new_df
 
 
-def load_dataframes(tweet_fpath: str, stock_fpath: str, tweet_datetime_col: str, text_col: str, date_col: str):
-    tweet_data = pd.read_csv(tweet_fpath)
-    tweet_data = convert_df_datetime_to_date(
-        data=tweet_data,
-        datetime_col=tweet_datetime_col,
-        text_col=text_col,
-        date_col=date_col)
+def load_dataframes(tweet_fpath: str, stock_fpath: str, tweet_datetime_col: str, text_col: str, date_col: str, convert_tweets_datetime: bool):
+    tweet_data = pd.read_csv(tweet_fpath, parse_dates=[date_col])
+
+    if convert_tweets_datetime:
+        tweet_data = convert_df_datetime_to_date(
+            data=tweet_data,
+            datetime_col=tweet_datetime_col,
+            text_col=text_col,
+            date_col=date_col)
+    else:
+        tweet_data[date_col] = tweet_data[date_col].dt.date
 
     stock_data = pd.read_csv(stock_fpath, parse_dates=[date_col])
 
@@ -161,10 +165,10 @@ def encode_data(
                 tweets += tweet_dict[tday]
         
         # add if there are actually tweets
-        if len(tweets) > 0:
+        if (len(tweets) > 0):
 
             # encode tweets as ints
-            encoded_tweets = [encode_tweet(tweet, input_word_index=input_word_index, max_words=max_words) for tweet in tweets]
+            encoded_tweets = [encode_tweet(tweet, input_word_index=input_word_index, max_words=max_words) for tweet in tweets if isinstance(tweet, str)]
 
             # encode stocks as a numpy array for that day
             encoded_stocks = stock_dict[cur_date]
@@ -178,7 +182,7 @@ def encode_data(
     return data_x, data_y
 
 
-def preprocess_data(tweet_fpath: str, stock_fpath: str):
+def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int):
 
     tweets_text_col = 'processed_text'
 
@@ -188,7 +192,8 @@ def preprocess_data(tweet_fpath: str, stock_fpath: str):
         stock_fpath=stock_fpath,
         tweet_datetime_col='Datetime',
         text_col=tweets_text_col,
-        date_col='Date')
+        date_col='Date',
+        convert_tweets_datetime=False)
     
     # get all unique words from tweets
     unique_words = get_unique_words(tweet_data=tweet_data, text_col=tweets_text_col)
@@ -205,7 +210,7 @@ def preprocess_data(tweet_fpath: str, stock_fpath: str):
         tweet_dict=tweet_dict,
         stock_dict=stock_dict,
         input_word_index=input_word_index,
-        max_words=64,
+        max_words=max_words,
         time_window=3)
     
     return data_x, data_y, input_word_index, unique_words

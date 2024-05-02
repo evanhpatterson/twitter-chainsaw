@@ -20,7 +20,7 @@ def fit_model(
         model,
         x_train: list, y_train: np.ndarray,
         val_x: list, val_y: np.ndarray,
-        epochs: int, batch_size: int, sample_size: int):
+        epochs: int, batch_size: int, sample_size: int, max_words: int):
     
     num_samples = len(x_train)
     num_batches = np.ceil(num_samples / batch_size)
@@ -44,22 +44,36 @@ def fit_model(
             model_inputs = []
             
             for x in batch_x:
-                model_inputs.append(sample(x, sample_size))
+                if sample_size < len(x):
+                    model_inputs.append(sample(x, sample_size))
+                elif sample_size == len(x):
+                    model_inputs.append(x)
+                else:
+                    padding = [np.zeros(max_words, dtype=int) for _ in range(sample_size - len(x))]
+                    padded_x = x + padding
+                    model_inputs.append(padded_x)
             
             model_inputs = np.array(model_inputs, dtype=int)
             
             loss = model.train_on_batch(model_inputs, batch_y)
             epoch_losses.append(loss)
         
-        model_inputs = []
+        val_inputs = []
         
         # validation
         for x in val_x:
-            model_inputs.append(sample(x, sample_size))
+            if sample_size < len(x):
+                val_inputs.append(sample(x, sample_size))
+            elif sample_size == len(x):
+                val_inputs.append(x)
+            else:
+                padding = [np.zeros(max_words, dtype=int) for _ in range(sample_size - len(x))]
+                padded_x = x + padding
+                val_inputs.append(padded_x)
         
-        model_inputs = np.array(model_inputs, dtype=int)
+        val_inputs = np.array(val_inputs, dtype=int)
         
-        val_loss = model.test_on_batch(model_inputs, val_y)
+        val_loss = model.test_on_batch(val_inputs, val_y)
         
         avg_loss = np.mean(epoch_losses)
         
@@ -204,7 +218,7 @@ def normalize_matrix(mat, norm_type):
 def plot_losses(training_losses, validation_losses):
     epochs = range(1, len(training_losses) + 1)
     
-    plt.figure(figsize=(10, 5))  # Set the figure size for better readability
+    plt.figure(figsize=(10, 5))
     plt.plot(epochs, training_losses, label='Training Loss', marker='o', linestyle='-')
     plt.plot(epochs, validation_losses, label='Validation Loss', marker='x', linestyle='--')
     
@@ -222,12 +236,12 @@ if __name__=="__main__":
     
     use_word_mat = False
 
-    tweet_fpath = "data/final_preprocessed_tweets.csv"
+    tweet_fpath = "data/preprocessed_tesla_tweets.csv"
 
-    stock_fpath = "data/NVDA-delta.csv"
+    stock_fpath = "data/tesla_stock_price-delta.csv"
 
-    data_x, data_y, input_word_index, unique_words = preprocess_data(tweet_fpath=tweet_fpath, stock_fpath=stock_fpath)
-    
+    data_x, data_y, input_word_index, unique_words = preprocess_data(tweet_fpath=tweet_fpath, stock_fpath=stock_fpath, max_words=64)
+
     # get internal lexicon word indices
     internal_lexicon = load_internal_lexicon()
     output_word_index, _ = generate_word_dicts(internal_lexicon)
@@ -240,7 +254,7 @@ if __name__=="__main__":
             output_words=internal_lexicon,
             output_words_dict=output_word_index,
             similarity_func=word_similarity_glove_cos).T
-        #word_mat = normalize_matrix(word_mat, 'cols')
+        word_mat = normalize_matrix(word_mat, 'cols')
     else:
         word_mat = None
 
@@ -271,7 +285,8 @@ if __name__=="__main__":
             model=model,
             x_train=train_x, y_train=train_y,
             val_x=test_x, val_y=test_y,
-            epochs=epochs, batch_size=32, sample_size=256)
+            epochs=epochs, batch_size=32, sample_size=256,
+            max_words=64)
         
         training_losses_avg += training_losses
         validation_losses_avg += validation_losses
