@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 if __name__=="__main__":
-    fpath = 'data/NVDA.csv'
+    fpath = 'data/tesla_stock_price.csv'
 
     fpath_no_ext, ext = os.path.splitext(fpath)
 
