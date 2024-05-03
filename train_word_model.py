@@ -254,7 +254,8 @@ if __name__=="__main__":
 
     stock_fpath = "data/tesla_stock_price-delta.csv"
 
-    data_x, data_y, input_word_index, unique_words = preprocess_data(tweet_fpath=tweet_fpath, stock_fpath=stock_fpath, max_words=64)
+    data_x, data_y, input_word_index, unique_words = preprocess_data(
+        tweet_fpath=tweet_fpath, stock_fpath=stock_fpath, max_words=64, categorical=categorical)
 
     # get internal lexicon word indices
     internal_lexicon = load_internal_lexicon()
@@ -291,11 +292,16 @@ if __name__=="__main__":
 
         model = Sequential()
         model.add(word_model)
-        model.add(Dense(6 * 2))
-        model.add(Reshape((6, 2)))
-        model.add(Softmax())
+        if categorical:
+            model.add(Dense(6 * 2))
+            model.add(Reshape((6, 2)))
+            model.add(Softmax())
         
-        model.compile(optimizer=Adam(learning_rate=0.00001), loss='categorical_crossentropy')
+            model.compile(optimizer=Adam(learning_rate=0.00001), loss='categorical_crossentropy')
+        else:
+            model.add(Dense(6))
+            
+            model.compile(optimizer='adam', loss='mse')
         
         training_losses, validation_losses = fit_model(
             model=model,
