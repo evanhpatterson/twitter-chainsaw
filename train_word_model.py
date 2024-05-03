@@ -9,11 +9,12 @@ from wordprop.create_word_model import create_word_model
 from wordprop.synsets_similarity import word_similarity_synsets
 from wordprop.glove_similarity import word_similarity_glove_cos, word_similarity_glove_euc
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Reshape, Softmax
 from preprocessing import preprocess_data
 from random import sample
 from calc_direction_accuracy import calc_direction_accuracy
 import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score
 
 
 def fit_model(
@@ -114,20 +115,26 @@ def train_word_model(train_x, train_y, word_mat):
     return model
 
 
-def test_model(model: Sequential, test_x, test_y, sample_size):
+def test_model(model: Sequential, test_x, test_y, sample_size, max_words):
     
     model_inputs = []
     
     for x in test_x:
-        model_inputs.append(sample(x, sample_size))
+        if sample_size < len(x):
+            model_inputs.append(sample(x, sample_size))
+        elif sample_size == len(x):
+            model_inputs.append(x)
+        else:
+            padding = [np.zeros(max_words, dtype=int) for _ in range(sample_size - len(x))]
+            padded_x = x + padding
+            model_inputs.append(padded_x)
     
     model_inputs = np.array(model_inputs, dtype=int)
     
     pred = model.predict(model_inputs)
-    
-    print(pred.shape)
-    
-    acc = calc_direction_accuracy(pred=pred, actual=test_y)
+
+    temp = (np.argmax(pred, axis=2) == np.argmax(test_y, axis=2))
+    acc = np.sum(temp) / temp.size
     
     return acc
 
@@ -214,7 +221,6 @@ def normalize_matrix(mat, norm_type):
         return mat
 
 
-
 def plot_losses(training_losses, validation_losses):
     epochs = range(1, len(training_losses) + 1)
     
@@ -277,9 +283,11 @@ if __name__=="__main__":
 
         model = Sequential()
         model.add(word_model)
-        model.add(Dense(6))
+        model.add(Dense(6 * 2))
+        model.add(Reshape((6, 2)))
+        model.add(Softmax())
         
-        model.compile(optimizer='adam', loss='mse')
+        model.compile(optimizer='adam', loss='binary_crossentropy')
         
         training_losses, validation_losses = fit_model(
             model=model,
@@ -290,8 +298,11 @@ if __name__=="__main__":
         
         training_losses_avg += training_losses
         validation_losses_avg += validation_losses
-        
-        acc = test_model(model=model, test_x=test_x, test_y=test_y, sample_size=256)
+
+        acc = test_model(model, test_x, test_y, sample_size=256, max_words=64)
+
+        print(f"accuracy for this fold: {acc}")
+
         testing_accuracy.append(acc)
     
     training_losses_avg /= float(len(folds))

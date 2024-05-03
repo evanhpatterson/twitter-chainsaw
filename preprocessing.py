@@ -101,20 +101,22 @@ def get_stock_dict(stock_data: pd.DataFrame, date_col: str):
     return stock_dict
 
 
-def encode_tweet_list(tweet_list: list, input_word_index: dict, max_tweets: int, max_words: int):
-    encoded_tweets = np.zeros((max_tweets, max_words), dtype=int)
-    for i, tweet in enumerate(tweet_list):
-        words_list = tweet.split()
+def convert_stocks_to_categorical(df: pd.DataFrame, date_col: str):
+    targets_df = df.drop(columns=[date_col])
+    targets_df = (targets_df[targets_df.columns] >= 0)
 
-        filtered_words_list = [word for word in words_list if isinstance(word, str)]
+    categorical_arr = np.empty((len(targets_df), len(targets_df.columns), 2), dtype=int)
 
-        filtered_words_list = filtered_words_list[:max_words]
+    for i, column in enumerate(targets_df.columns):
+        categorical_arr[:, i, :] = np.where(targets_df[column].values[:, None], [1, 0], [0, 1])
 
-        for j, word in enumerate(filtered_words_list):
-            if word in input_word_index:
-                encoded_tweets[i, j] = input_word_index[word]
+    categorical_data = dict()
+
+    for i, row in df.iterrows():
+        cur_day = row[date_col]
+        categorical_data[cur_day] = categorical_arr[i]
     
-    return encoded_tweets
+    return categorical_data
 
 
 def encode_tweet(tweet, input_word_index: dict, max_words: int):
@@ -203,7 +205,7 @@ def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int):
     tweet_dict = get_tweet_dict(tweet_data=tweet_data, text_col=tweets_text_col, date_col='Date')
 
     # load stock dict; the format is date: stock_values
-    stock_dict = get_stock_dict(stock_data=stock_data, date_col='Date')
+    stock_dict = convert_stocks_to_categorical(stock_data, date_col='Date')
 
     # encode the data numerically
     data_x, data_y = encode_data(
