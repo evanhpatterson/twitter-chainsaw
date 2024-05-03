@@ -22,28 +22,37 @@ def fit_model(
         x_train: list, y_train: np.ndarray,
         val_x: list, val_y: np.ndarray,
         epochs: int, batch_size: int, sample_size: int, max_words: int):
+    '''
+        Train on data.
+        This function is specially written to sample inputs before feeding them into the network.
+    '''
     
+    # get data size
     num_samples = len(x_train)
-    num_batches = np.ceil(num_samples / batch_size)
     
+    # arrays to track losses
     training_losses = np.zeros(epochs, dtype=float)
     validation_losses = np.zeros(epochs, dtype=float)
 
     for epoch in range(epochs):
         print(f"Epoch {epoch+1}/{epochs}")
         epoch_losses = []
-
+        
+        # shuffle the data
         indices = np.arange(num_samples)
         np.random.shuffle(indices)
         x_train = [x_train[i] for i in indices]
         y_train = np.array(y_train)[indices]
-
+        
+        # go through each batch
         for i in range(0, num_samples, batch_size):
             batch_x = x_train[i:i+batch_size]
             batch_y = y_train[i:i+batch_size]
             
+            # array for collecting model inputs
             model_inputs = []
             
+            # get sample for each batch input
             for x in batch_x:
                 if sample_size < len(x):
                     model_inputs.append(sample(x, sample_size))
@@ -54,14 +63,18 @@ def fit_model(
                     padded_x = x + padding
                     model_inputs.append(padded_x)
             
+            # convert to a numpy array
             model_inputs = np.array(model_inputs, dtype=int)
             
+            # train on this batch
             loss = model.train_on_batch(model_inputs, batch_y)
+            
+            # track losses
             epoch_losses.append(loss)
         
         val_inputs = []
         
-        # validation
+        # get validation data samples
         for x in val_x:
             if sample_size < len(x):
                 val_inputs.append(sample(x, sample_size))
@@ -72,16 +85,22 @@ def fit_model(
                 padded_x = x + padding
                 val_inputs.append(padded_x)
         
+        # convert to np array
         val_inputs = np.array(val_inputs, dtype=int)
         
+        # get the loss for the validation data
         val_loss = model.test_on_batch(val_inputs, val_y)
         
+        # get the average 
         avg_loss = np.mean(epoch_losses)
         
+        # add to training losses
         training_losses[epoch] = avg_loss
         
+        # add to validation losses
         validation_losses[epoch] = val_loss
         
+        # show losses
         print(f"Average loss:    {avg_loss:.4f}")
         
         print(f"Validation loss: {val_loss:.4f}")
@@ -91,32 +110,12 @@ def fit_model(
     return training_losses, validation_losses
 
 
-def train_word_model(train_x, train_y, word_mat):
-    '''
-        Build and train the initial model that uses words to make predictions.
-    '''
-    
-    word_model = create_word_model(
-        word_mat=word_mat,
-        num_unique_words=len(unique_words),
-        internal_lexicon_size=len(internal_lexicon),
-        lstm1_size=128,
-        lstm2_size=64,
-        extra_words=0)
-
-    model = Sequential()
-    model.add(word_model)
-    model.add(Dense(6))
-
-    model.compile(optimizer='adam', loss='mse')
-    
-    fit_model(model=model, x_train=train_x, y_train=train_y, epochs=50, batch_size=32, sample_size=256)
-
-    return model
-
-
 def test_model(model: Sequential, test_x, test_y, sample_size, max_words, categorical: bool):
+    '''
+        Test the accuracy of the model.
+    '''
     
+    # sample inputs first
     model_inputs = []
     
     for x in test_x:
@@ -131,8 +130,10 @@ def test_model(model: Sequential, test_x, test_y, sample_size, max_words, catego
     
     model_inputs = np.array(model_inputs, dtype=int)
     
+    # retreive the prediction
     pred = model.predict(model_inputs)
-
+    
+    # convert to categorical
     if categorical:
         temp = (np.argmax(pred, axis=2) == np.argmax(test_y, axis=2))
         acc = np.sum(temp) / temp.size
@@ -143,21 +144,21 @@ def test_model(model: Sequential, test_x, test_y, sample_size, max_words, catego
 
 
 def train_test_split(data_x, data_y, test_size=0.1):
-    # Calculate the number of test samples
+    # get the number of test samples
     num_samples = len(data_x)
     num_test = int(num_samples * test_size)
     
-    # Create an index array
+    # create index array
     indices = np.arange(num_samples)
     
-    # Shuffle indices
+    # shuffle indices
     np.random.shuffle(indices)
     
-    # Split indices into training and test sets
+    # split indices into training and test sets
     test_indices = indices[:num_test]
     train_indices = indices[num_test:]
     
-    # Use the indices to create training and test sets
+    # use the indices to create training and test sets
     train_x = [data_x[i] for i in train_indices]
     test_x = [data_x[i] for i in test_indices]
     train_y = data_y[train_indices]
@@ -169,16 +170,16 @@ def train_test_split(data_x, data_y, test_size=0.1):
 def cross_validation_split(data_x, data_y, k=5):
     num_samples = len(data_x)
     
-    # Create an index array
+    # create an index array
     indices = np.arange(num_samples)
     
-    # Shuffle indices
+    # shuffle indices
     np.random.shuffle(indices)
     
-    # Calculate the number of samples per fold
+    # calculate the number of samples per fold
     fold_size = int(num_samples / k)
     
-    # Split the indices into k folds
+    # split the indices into k folds
     folds = []
     for i in range(k):
         start = i * fold_size
@@ -198,7 +199,7 @@ def cross_validation_split(data_x, data_y, k=5):
 
 def normalize_matrix(mat, norm_type):
     
-    if norm_type == "rows":
+    if norm_type == "rows": # normalize rows
         
         row_means = np.mean(mat, axis=1, keepdims=True)
 
@@ -209,7 +210,7 @@ def normalize_matrix(mat, norm_type):
                 row_stds[i] = 1.0
 
         return (mat - row_means) / row_stds
-    elif norm_type == "cols":
+    elif norm_type == "cols": # normalize cols
         
         column_means = np.mean(mat, axis=0)
 
@@ -225,6 +226,9 @@ def normalize_matrix(mat, norm_type):
 
 
 def plot_losses(training_losses, validation_losses, using_wordprop, epochs):
+    ''' 
+        Use matplotlib to show the loss curves and save the figure.
+    '''
     epochs = range(1, len(training_losses) + 1)
     
     plt.figure(figsize=(10, 5))
@@ -237,7 +241,7 @@ def plot_losses(training_losses, validation_losses, using_wordprop, epochs):
     plt.legend()
     plt.grid(True)
     fname = "wordprop-" if using_wordprop else "random-"
-    fname += f"{str(epochs)} epochs"
+    fname += f"{epochs} epochs"
     plt.savefig(fname)
     plt.show()
 

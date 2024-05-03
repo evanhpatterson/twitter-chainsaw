@@ -29,16 +29,25 @@ def get_unique_words(tweet_data: pd.DataFrame, text_col: str):
 def generate_word_dicts(words_list: list):
     '''
         Word dicts are generated that map words to indices and indices to words.
+        nltk has a similar capability.
     '''
     word_index = dict()
     index_word = dict()
     for i, word in enumerate(words_list):
+        # this dictionary maps word to int
         word_index[word] = i
+        
+        # this dictionary maps int to word
         index_word[i] = word
+    
+    # return both
     return word_index, index_word
 
 
 def convert_df_datetime_to_date(data: pd.DataFrame, datetime_col: str, text_col: str, date_col: str):
+    '''
+        Convert the dataframes datetime column to date.
+    '''
 
     data[datetime_col] = pd.to_datetime(data[datetime_col], errors='coerce')
 
@@ -58,41 +67,61 @@ def convert_df_datetime_to_date(data: pd.DataFrame, datetime_col: str, text_col:
 
 
 def load_dataframes(tweet_fpath: str, stock_fpath: str, tweet_datetime_col: str, text_col: str, date_col: str, convert_tweets_datetime: bool):
+    '''
+        Load the dataframes given the filepaths.
+        Converts dates while doing this, so they are date objects.
+    '''
+    
+    # load the tweets, parsing dates.
     tweet_data = pd.read_csv(tweet_fpath, parse_dates=[date_col])
-
+    
+    # convert tweets from datetime to just date
     if convert_tweets_datetime:
         tweet_data = convert_df_datetime_to_date(
             data=tweet_data,
             datetime_col=tweet_datetime_col,
             text_col=text_col,
             date_col=date_col)
-    else:
+    else: # convert date column to date object
         tweet_data[date_col] = tweet_data[date_col].dt.date
-
+    
+    # read the stock data, parsing dates as well.
     stock_data = pd.read_csv(stock_fpath, parse_dates=[date_col])
-
+    
+    # convert stock data date col to date.
     stock_data[date_col] = stock_data[date_col].dt.date
     
     return tweet_data, stock_data
 
 
 def get_tweet_dict(tweet_data: pd.DataFrame, text_col: str, date_col: str):
+    '''
+        Get the tweet dict used to create input data.
+    '''
 
     tweet_dict = dict()
-
+    
+    # init list of tweets for each day
     for tdate in set(tweet_data[date_col].to_list()):
         tweet_dict[tdate] = []
-
+    
+    # iterate through rows
     for i, row in tweet_data.iterrows():
+        # add each tweet to the corresponding day
         tweet_dict[row[date_col]].append(row[text_col])
     
     return tweet_dict
 
 
 def get_stock_dict(stock_data: pd.DataFrame, date_col: str):
-
+    '''
+        Get the stocks dictionary used to create regression data.
+    '''
+    
+    # create stock dict
     stock_dict = dict()
-
+    
+    # iterate through stock data, add each days vals as a np array
     for _, row in stock_data.iterrows():
         stock_date = row[date_col]
         stock_row = row.drop(date_col).to_numpy()
@@ -102,16 +131,25 @@ def get_stock_dict(stock_data: pd.DataFrame, date_col: str):
 
 
 def convert_stocks_to_categorical(df: pd.DataFrame, date_col: str):
+    '''
+        Convert the stocks dataframe to categorical data: increase or decrease.
+    '''
+    
+    # convert to true false vals that keep track of up vs down direction.
     targets_df = df.drop(columns=[date_col])
     targets_df = (targets_df[targets_df.columns] >= 0)
-
+    
+    # array that tracks one hot encoded categorical data.
     categorical_arr = np.empty((len(targets_df), len(targets_df.columns), 2), dtype=int)
-
+    
+    # convert to one hot encoding.
     for i, column in enumerate(targets_df.columns):
         categorical_arr[:, i, :] = np.where(targets_df[column].values[:, None], [1, 0], [0, 1])
-
+    
+    # track what day
     categorical_data = dict()
-
+    
+    # iterate and set the days vals based on position
     for i, row in df.iterrows():
         cur_day = row[date_col]
         categorical_data[cur_day] = categorical_arr[i]
@@ -120,14 +158,24 @@ def convert_stocks_to_categorical(df: pd.DataFrame, date_col: str):
 
 
 def encode_tweet(tweet, input_word_index: dict, max_words: int):
+    '''
+        Encode a single tweet as an array of integers.
+    '''
+    
+    # split the tweet based on whitespace
     words_list = tweet.split()
+    
+    # filter the word list based on type
     filtered_words_list = [word for word in words_list if isinstance(word, str)]
     
+    # if greater than max words, truncate it
     if len(filtered_words_list) > max_words:
         filtered_words_list = filtered_words_list[:max_words]
     
+    # array that tracks encoded words
     encoded_words = np.zeros(max_words, dtype=int)
     
+    # iterate through and set based on the encoding
     for i, word in enumerate(filtered_words_list):
         encoded_words[i] = input_word_index[word]
     
@@ -140,7 +188,10 @@ def encode_data(
         input_word_index: dict,
         max_words: int,
         time_window: int):
-
+    '''
+        Encode the data from its dict encoding.
+        This matches up things on the same days.
+    '''
     dates = []
 
     # get dates that are in both
@@ -179,13 +230,18 @@ def encode_data(
             data_x.append(encoded_tweets)
             data_y.append(encoded_stocks)
     
+    # convert the output data to a numpy array
     data_y = np.array(data_y, dtype=np.float32)
     
     return data_x, data_y
 
 
 def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int, categorical: bool):
-
+    '''
+        Preprocess the data, given the filepaths.
+    '''
+    
+    # set the name of the text column
     tweets_text_col = 'processed_text'
 
     # load tweet data and stock data
@@ -218,13 +274,5 @@ def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int, categori
         max_words=max_words,
         time_window=3)
     
+    # return everything we need
     return data_x, data_y, input_word_index, unique_words
-
-
-if __name__=="__main__":
-
-    tweet_fpath = "data/final_preprocessed_tweets.csv"
-
-    stock_fpath = "data/NVDA-delta.csv"
-
-    data_x, data_y, input_word_index, unique_words = preprocess_data(tweet_fpath=tweet_fpath, stock_fpath=stock_fpath)
