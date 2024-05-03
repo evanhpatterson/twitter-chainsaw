@@ -229,11 +229,11 @@ def plot_losses(training_losses, validation_losses, using_wordprop, epochs):
     ''' 
         Use matplotlib to show the loss curves and save the figure.
     '''
-    epochs = range(1, len(training_losses) + 1)
+    epochs_range = range(1, len(training_losses) + 1)
     
     plt.figure(figsize=(10, 5))
-    plt.plot(epochs, training_losses, label='Training Loss', marker='o', linestyle='-')
-    plt.plot(epochs, validation_losses, label='Validation Loss', marker='x', linestyle='--')
+    plt.plot(epochs_range, training_losses, label='Training Loss', marker='o', linestyle='-')
+    plt.plot(epochs_range, validation_losses, label='Validation Loss', marker='x', linestyle='--')
     
     plt.title('Training and Validation Losses')
     plt.xlabel('Epochs')
