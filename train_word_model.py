@@ -115,7 +115,7 @@ def train_word_model(train_x, train_y, word_mat):
     return model
 
 
-def test_model(model: Sequential, test_x, test_y, sample_size, max_words):
+def test_model(model: Sequential, test_x, test_y, sample_size, max_words, categorical: bool):
     
     model_inputs = []
     
@@ -133,8 +133,11 @@ def test_model(model: Sequential, test_x, test_y, sample_size, max_words):
     
     pred = model.predict(model_inputs)
 
-    temp = (np.argmax(pred, axis=2) == np.argmax(test_y, axis=2))
-    acc = np.sum(temp) / temp.size
+    if categorical:
+        temp = (np.argmax(pred, axis=2) == np.argmax(test_y, axis=2))
+        acc = np.sum(temp) / temp.size
+    else:
+        acc = calc_direction_accuracy(pred=pred, actual=test_y)
     
     return acc
 
@@ -245,6 +248,8 @@ if __name__=="__main__":
     
     use_word_mat = True
 
+    categorical = True
+
     tweet_fpath = "data/preprocessed_tesla_tweets.csv"
 
     stock_fpath = "data/tesla_stock_price-delta.csv"
@@ -302,7 +307,7 @@ if __name__=="__main__":
         training_losses_avg += training_losses
         validation_losses_avg += validation_losses
 
-        acc = test_model(model, test_x, test_y, sample_size=256, max_words=64)
+        acc = test_model(model, test_x, test_y, sample_size=256, max_words=64, categorical=categorical)
 
         print(f"accuracy for this fold: {acc}")
 
