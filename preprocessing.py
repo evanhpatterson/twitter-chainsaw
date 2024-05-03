@@ -184,7 +184,7 @@ def encode_data(
     return data_x, data_y
 
 
-def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int):
+def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int, categorical: bool):
 
     tweets_text_col = 'processed_text'
 
@@ -205,7 +205,10 @@ def preprocess_data(tweet_fpath: str, stock_fpath: str, max_words: int):
     tweet_dict = get_tweet_dict(tweet_data=tweet_data, text_col=tweets_text_col, date_col='Date')
 
     # load stock dict; the format is date: stock_values
-    stock_dict = convert_stocks_to_categorical(stock_data, date_col='Date')
+    if categorical:
+        stock_dict = convert_stocks_to_categorical(stock_data, date_col='Date')
+    else:
+        stock_dict = get_stock_dict(stock_data, date_col='Date')
 
     # encode the data numerically
     data_x, data_y = encode_data(
