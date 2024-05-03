@@ -14,7 +14,7 @@ from preprocessing import preprocess_data
 from random import sample
 from calc_direction_accuracy import calc_direction_accuracy
 import matplotlib.pyplot as plt
-from sklearn.metrics import accuracy_score
+from keras.optimizers import Adam
 
 
 def fit_model(
@@ -221,7 +221,7 @@ def normalize_matrix(mat, norm_type):
         return mat
 
 
-def plot_losses(training_losses, validation_losses):
+def plot_losses(training_losses, validation_losses, using_wordprop, epochs):
     epochs = range(1, len(training_losses) + 1)
     
     plt.figure(figsize=(10, 5))
@@ -233,14 +233,17 @@ def plot_losses(training_losses, validation_losses):
     plt.ylabel('Loss')
     plt.legend()
     plt.grid(True)
+    fname = "wordprop-" if using_wordprop else "random-"
+    fname += f"{str(epochs)} epochs"
+    plt.savefig(fname)
     plt.show()
 
 
 if __name__=="__main__":
     
-    epochs = 20
+    epochs = 100
     
-    use_word_mat = False
+    use_word_mat = True
 
     tweet_fpath = "data/preprocessed_tesla_tweets.csv"
 
@@ -287,7 +290,7 @@ if __name__=="__main__":
         model.add(Reshape((6, 2)))
         model.add(Softmax())
         
-        model.compile(optimizer='adam', loss='binary_crossentropy')
+        model.compile(optimizer=Adam(learning_rate=0.00001), loss='categorical_crossentropy')
         
         training_losses, validation_losses = fit_model(
             model=model,
@@ -308,7 +311,7 @@ if __name__=="__main__":
     training_losses_avg /= float(len(folds))
     validation_losses_avg /= float(len(folds))
     
-    plot_losses(training_losses_avg, validation_losses_avg)
+    plot_losses(training_losses_avg, validation_losses_avg, using_wordprop=use_word_mat, epochs=epochs)
     
     avg_accuracy = np.mean(np.array(testing_accuracy, dtype=float))
     print(f"accuracy: {avg_accuracy}")
